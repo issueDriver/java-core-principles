@@ -1,564 +1,617 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HashMap寻址算法 - 快递分拣站实例</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            background: linear-gradient(135deg, #f0f7ff 0%, #e6f0ff 100%);
-            color: #333;
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 30px;
-        }
-        
-        header {
-            text-align: center;
-            padding: 40px 0;
-            background: linear-gradient(90deg, #1a6dcc, #0d4a9e);
-            color: white;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        }
-        
-        h1 {
-            font-size: 2.8rem;
-            margin-bottom: 15px;
-            letter-spacing: 1px;
-        }
-        
-        .subtitle {
-            font-size: 1.3rem;
-            opacity: 0.9;
-            max-width: 800px;
-            margin: 0 auto;
-            font-weight: 300;
-        }
-        
-        .analogy-section {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-        
-        .analogy-header {
-            display: flexanalogy-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #1a6dcc;
-        }
-        
-        .analogy-icon {
-            font-size: 3rem;
-            margin-right: 20px;
-            color: #1a6dcc;
-        }
-        
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        color: #333;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        background: linear-gradient(135deg, #f0f7ff 0%, #e6f0ff 100%);
+      }
+
+      .container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+
+      header {
+        margin-bottom: 30px;
+        padding: 40px 0;
+        color: white;
+        text-align: center;
+        background: linear-gradient(90deg, #1a6dcc, #0d4a9e);
+        border-radius: 15px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      }
+
+      h1 {
+        margin-bottom: 15px;
+        font-size: 2.8rem;
+        letter-spacing: 1px;
+      }
+
+      .subtitle {
+        max-width: 800px;
+        margin: 0 auto;
+        font-weight: 300;
+        font-size: 1.3rem;
+        opacity: 0.9;
+      }
+
+      .analogy-section {
+        margin-bottom: 30px;
+        padding: 30px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .analogy-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #1a6dcc;
+      }
+
+      .analogy-icon {
+        margin-right: 20px;
+        color: #1a6dcc;
+        font-size: 3rem;
+      }
+
+      .analogy-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+      }
+
+      .analogy-box {
+        padding: 25px;
+        background: #f5f9ff;
+        border-left: 4px solid #1a6dcc;
+        border-radius: 10px;
+      }
+
+      .analogy-box h3 {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        color: #0d4a9e;
+      }
+
+      .analogy-box h3 i {
+        margin-right: 10px;
+      }
+
+      .analogy-box ul {
+        margin-left: 25px;
+      }
+
+      .analogy-box li {
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+        line-height: 1.6;
+      }
+
+      .analogy-box li strong {
+        color: #e74c3c;
+      }
+
+      .visualization {
+        margin-bottom: 30px;
+        padding: 30px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .visual-header {
+        margin-bottom: 30px;
+        color: #0d4a9e;
+        text-align: center;
+      }
+
+      .warehouse {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 40px;
+      }
+
+      .shelf {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0 20px;
+      }
+
+      .shelf-label {
+        margin-bottom: 10px;
+        color: #0d4a9e;
+        font-weight: bold;
+      }
+
+      .bin {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100px;
+        height: 100px;
+        margin: 10px 0;
+        overflow: hidden;
+        background: #e6f0ff;
+        border: 3px solid #1a6dcc;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .bin-number {
+        color: #0d4a9e;
+        font-weight: bold;
+        font-size: 1.5rem;
+      }
+
+      .bin-content {
+        padding: 5px;
+        font-size: 0.9rem;
+        text-align: center;
+      }
+
+      .bin.active {
+        background: #ffeb3b;
+        border-color: #ff9800;
+        box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+        transform: scale(1.05);
+      }
+
+      .bin.active .bin-number {
+        color: #e74c3c;
+      }
+
+      .package {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px;
+        height: 40px;
+        margin: 10px 0;
+        color: white;
+        font-weight: bold;
+        background: #4caf50;
+        border-radius: 5px;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .package:hover {
+        transform: translateY(-5px);
+      }
+
+      .calculation {
+        margin: 30px 0;
+        padding: 25px;
+        color: white;
+        font-size: 1.2rem;
+        font-family: monospace;
+        line-height: 1.8;
+        background: #2c3e50;
+        border-radius: 10px;
+      }
+
+      .highlight {
+        color: #ffeb3b;
+        font-weight: bold;
+      }
+
+      .interactive-section {
+        padding: 30px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .input-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 25px;
+      }
+
+      .input-column {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .input-column label {
+        margin-bottom: 10px;
+        color: #2c3e50;
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+
+      input[type='text'],
+      select {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 1.1rem;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        transition: border-color 0.3s;
+      }
+
+      input[type='text']:focus,
+      select:focus {
+        border-color: #1a6dcc;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(26, 109, 204, 0.2);
+      }
+
+      button {
+        width: 100%;
+        margin-top: 10px;
+        padding: 15px 30px;
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        background: linear-gradient(to right, #1a6dcc, #0d4a9e);
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      button:hover {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        transform: translateY(-3px);
+      }
+
+      .results {
+        margin-top: 25px;
+        padding: 20px;
+        background: #eaf7ff;
+        border-left: 4px solid #1a6dcc;
+        border-radius: 10px;
+      }
+
+      .result-item {
+        margin-bottom: 15px;
+        padding: 12px;
+        font-size: 1.1rem;
+        background: white;
+        border-radius: 8px;
+      }
+
+      .result-item strong {
+        color: #e74c3c;
+      }
+
+      .conclusion {
+        margin-top: 25px;
+        padding: 25px;
+        background: #eaf7ff;
+        border-left: 4px solid #4caf50;
+        border-radius: 10px;
+      }
+
+      .conclusion h3 {
+        margin-bottom: 15px;
+        color: #2c3e50;
+        font-size: 1.5rem;
+      }
+
+      .conclusion p {
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+        line-height: 1.7;
+      }
+
+      .conclusion ul {
+        margin-bottom: 20px;
+        margin-left: 25px;
+      }
+
+      .conclusion li {
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+      }
+
+      footer {
+        margin-top: 40px;
+        padding: 25px;
+        color: #7f8c8d;
+        font-size: 1rem;
+        font-style: italic;
+        text-align: center;
+        border-top: 1px solid #eee;
+      }
+
+      @media (max-width: 900px) {
         .analogy-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
+          grid-template-columns: 1fr;
         }
-        
-        .analogy-box {
-            background: #f5f9ff;
-            border-radius: 10px;
-            padding: 25px;
-            border-left: 4px solid #1a6dcc;
-        }
-        
-        .analogy-box h3 {
-            color: #0d4a9e;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .analogy-box h3 i {
-            margin-right: 10px;
-        }
-        
-        .analogy-box ul {
-            margin-left: 25px;
-        }
-        
-        .analogy-box li {
-            margin-bottom: 15px;
-            font-size: 1.1rem;
-            line-height: 1.6;
-        }
-        
-        .analogy-box li strong {
-            color: #e74c3c;
-        }
-        
-        .visualization {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-        
-        .visual-header {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #0d4a9e;
-        }
-        
-        .warehouse {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 40px;
-        }
-        
-        .shelf {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0 20px;
-        }
-        
-        .shelf-label {
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #0d4a9e;
-        }
-        
-        .bin {
-            width: 100px;
-            height: 100px;
-            border: 3px solid #1a6dcc;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            margin: 10px 0;
-            background: #e6f0ff;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .bin-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #0d4a9e;
-        }
-        
-        .bin-content {
-            font-size: 0.9rem;
-            text-align: center;
-            padding: 5px;
-        }
-        
-        .bin.active {
-            background: #ffeb3b;
-            border-color: #ff9800;
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
-        }
-        
-        .bin.active .bin-number {
-            color: #e74c3c;
-        }
-        
-        .package {
-            width: 80px;
-            height: 40px;
-            background: #4caf50;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-weight: bold;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .package:hover {
-            transform: translateY(-5px);
-        }
-        
-        .calculation {
-            background: #2c3e50;
-            color: white;
-            padding: 25px;
-            border-radius: 10px;
-            margin: 30px 0;
-            font-family: monospace;
-            font-size: 1.2rem;
-            line-height: 1.8;
-        }
-        
-        .highlight {
-            color: #ffeb3b;
-            font-weight: bold;
-        }
-        
-        .interactive-section {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-        
+
         .input-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 25px;
+          grid-template-columns: 1fr;
         }
-        
-        .input-column {
-            display: flex;
-            flex-direction: column;
+
+        .warehouse {
+          flex-direction: column;
+          align-items: center;
         }
-        
-        .input-column label {
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #2c3e50;
-            font-size: 1.1rem;
+
+        .shelf {
+          margin: 20px 0;
         }
-        
-        input[type="text"], select {
-            padding: 12px 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            transition: border-color 0.3s;
-            width: 100%;
-        }
-        
-        input[type="text"]:focus, select:focus {
-            border-color: #1a6dcc;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(26, 109, 204, 0.2);
-        }
-        
-        button {
-            background: linear-gradient(to right, #1a6dcc, #0d4a9e);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-            width: 100%;
-            margin-top: 10px;
-        }
-        
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-        
-        .results {
-            background: #eaf7ff;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 25px;
-            border-left: 4px solid #1a6dcc;
-        }
-        
-        .result-item {
-            margin-bottom: 15px;
-            padding: 12px;
-            background: white;
-            border-radius: 8px;
-            font-size: 1.1rem;
-        }
-        
-        .result-item strong {
-            color: #e74c3c;
-        }
-        
-        .conclusion {
-            background: #eaf7ff;
-            padding: 25px;
-            border-radius: 10px;
-            margin-top: 25px;
-            border-left: 4px solid #4caf50;
-        }
-        
-        .conclusion h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-        }
-        
-        .conclusion p {
-            margin-bottom: 15px;
-            font-size: 1.1rem;
-            line-height: 1.7;
-        }
-        
-        .conclusion ul {
-            margin-left: 25px;
-            margin-bottom: 20px;
-        }
-        
-        .conclusion li {
-            margin-bottom: 10px;
-            font-size: 1.1rem;
-        }
-        
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            padding: 25px;
-            color: #7f8c8d;
-            font-size: 1rem;
-            border-top: 1px solid #eee;
-            font-style: italic;
-        }
-        
-        @media (max-width: 900px) {
-            .analogy-content {
-                grid-template-columns: 1fr;
-            }
-            
-            .input-group {
-                grid-template-columns: 1fr;
-            }
-            
-            .warehouse {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .shelf {
-                margin: 20px 0;
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <header>
-            <h1>HashMap寻址算法</h1>
-            <div class="subtitle">快递分拣站实例 - 大白话解释计算机科学概念</div>
-        </header>
-        
-        <div class="analogy-section">
-            <div class="analogy-header">
-                <div class="analogy-icon">📦</div>
-                <div>
-                    <h2>快递分拣站类比</h2>
-                    <p>把HashMap想象成一个快递分拣中心，快速将包裹分发到正确的货架</p>
-                </div>
-            </div>
-            
-            <div class="analogy-content">
-                <div class="analogy-box">
-                    <h3><i>📦</i> 快递分拣站</h3>
-                    <ul>
-                        <li><strong>快递包裹</strong> → HashMap的键值对（Key-Value）</li>
-                        <li><strong>分拣中心</strong> → HashMap内部存储结构</li>
-                        <li><strong>分拣筐（货架格子）</strong> → HashMap的桶（Bucket）</li>
-                        <li><strong>快递单号</strong> → 键（Key）的哈希值</li>
-                        <li><strong>分拣算法</strong> → HashMap的寻址算法</li>
-                        <li><strong>分拣员</strong> → HashMap的put/get方法</li>
-                    </ul>
-                </div>
-                
-                <div class="analogy-box">
-                    <h3><i>⚙️</i> 分拣过程</h3>
-                    <ul>
-                        <li>1. <strong>扫描快递单</strong>：计算键的哈希值（hashCode）</li>
-                        <li>2. <strong>优化单号</strong>：扰动函数处理哈希值（避免相似单号扎堆）</li>
-                        <li>3. <strong>计算筐号</strong>：<code>筐号 = 优化后单号 & (筐总数 - 1)</code></li>
-                        <li>4. <strong>放入筐中</strong>：将包裹放入对应筐（桶）</li>
-                        <li>5. <strong>筐满扩容</strong>：当筐太多包裹时，增加筐数量并重新分拣</li>
-                    </ul>
-                </div>
-            </div>
+      <header>
+        <h1>HashMap寻址算法</h1>
+        <div class="subtitle">快递分拣站实例 - 大白话解释计算机科学概念</div>
+      </header>
+
+      <div class="analogy-section">
+        <div class="analogy-header">
+          <div class="analogy-icon">📦</div>
+          <div>
+            <h2>快递分拣站类比</h2>
+            <p>把HashMap想象成一个快递分拣中心，快速将包裹分发到正确的货架</p>
+          </div>
         </div>
-        
-        <div class="visualization">
-            <h2 class="visual-header">快递分拣过程可视化</h2>
-            
-            <div class="warehouse">
-                <div class="shelf">
-                    <div class="shelf-label">待分拣包裹</div>
-                    <div class="package" id="pkg1">JD-12345</div>
-                    <div class="package" id="pkg2">SF-67890</div>
-                    <div class="package" id="pkg3">YT-24680</div>
-                </div>
-                
-                <div class="shelf">
-                    <div class="shelf-label">分拣中心 (8个筐)</div>
-                    <div class="bin" id="bin0"><div class="bin-number">0</div><div class="bin-content"></div></div>
-                    <div class="bin" id="bin1"><div class="bin-number">1</div><div class="bin-content"></div></div>
-                    <div class="bin" id="bin2"><div class="bin-number">2</div><div class="bin-content"></div></div>
-                    <div class="bin" id="bin3"><div class="bin-number">3</div><div class="bin-content"></div></div>
-                    <div class="bin" id="bin4"><div class="bin-number">4</div><div class="bin-content"></div></div>
-                    <div class="bin" id="bin5"><div class="bin-number">5</div><div class="bin-content"></div></div>
-                    <div class="bin" id="bin6"><div class="bin-number">6</div><div class="bin-content"></div></div>
-                    <div class="bin" id="bin7"><div class="bin-number">7</div><div class="bin-content"></div></div>
-                </div>
-            </div>
-            
-            <div class="calculation">
-                // 分拣算法核心代码：<br>
-                int <span class="highlight">hash</span> = key.hashCode() ^ (key.hashCode() >>> 16);<br>
-                int <span class="highlight">index</span> = hash & (n - 1); // n是筐的数量（当前为8）
-            </div>
-            
-           8）
-            </div>
-            
-            <div class="interactive-section">
-                <h3>亲自体验分拣过程</h3>
-                
-                <div class="input-group">
-                    <div class="input-column">
-                        <label for="packageId">输入快递单号：</label>
-                        <input type="text" id="packageId" value="JD-12345" placeholder="例如：JD-12345">
-                    </divJD-12345">
-                    </div>
-                    
-                    <div class="input-column">
-                        <label for="binCount">选择分拣筐数量：</label>
-                        <select id="binCount">
-                            <option value="8">8个筐</option>
-                            <option value="16">16个筐</option>
-                            <option value="32">32个筐</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <button id="sortBtn">开始分拣</button>
-                
-                <div class="results">
-                    <div class="result-item">
-                        <strong>快递单号：</strong> <span id="packageResult"></span>
-                    </div>
-                    <div class="result-item">
-                        <strong>原始哈希值：</strong> <span id="hashOriginal"></span>
-                    </div>
-                    <div class="result-item">
-                        <strong>扰动后哈希值：</strong> <span id="hashDisturbed"></span>
-                    </div>
-                    <div class="result-item">
-                        <strong>分拣筐号：</strong> <span id="binResult"></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="conclusion">
-            <h3>HashMap寻址核心原理</h3>
+
+        <div class="analogy-content">
+          <div class="analogy-box">
+            <h3><i>📦</i> 快递分拣站</h3>
             <ul>
-                <li><strong>闪电定位</strong>：使用位运算 <code>&</code> 替代取模运算 <code>%</code>，速度提升10倍以上</li>
-                <li><strong>避免扎堆</strong>：哈希扰动函数让相似键值分散到不同位置</li>
-                <li><strong>动态扩容</strong>：当元素过多时自动增加"筐"的数量（桶扩容）</li>
-                <li><strong>高效查找</strong>：直接计算位置，无需遍历整个仓库</li>
-                <li><strong>2的n次方</strong>：筐数量总是2的幂次（8,16,32...），确保 <code>& (n-1)</code> 等效取模</li>
+              <li><strong>快递包裹</strong> → HashMap的键值对（Key-Value）</li>
+              <li><strong>分拣中心</strong> → HashMap内部存储结构</li>
+              <li>
+                <strong>分拣筐（货架格子）</strong> → HashMap的桶（Bucket）
+              </li>
+              <li><strong>快递单号</strong> → 键（Key）的哈希值</li>
+              <li><strong>分拣算法</strong> → HashMap的寻址算法</li>
+              <li><strong>分拣员</strong> → HashMap的put/get方法</li>
             </ul>
-            <p>HashMap就像智能快递分拣系统，无论来多少包裹，都能瞬间算出正确位置，比人工分拣快N倍！</p>
+          </div>
+
+          <div class="analogy-box">
+            <h3><i>⚙️</i> 分拣过程</h3>
+            <ul>
+              <li>
+                1. <strong>扫描快递单</strong>：计算键的哈希值（hashCode）
+              </li>
+              <li>
+                2.
+                <strong>优化单号</strong
+                >：扰动函数处理哈希值（避免相似单号扎堆）
+              </li>
+              <li>
+                3. <strong>计算筐号</strong>：<code
+                  >筐号 = 优化后单号 & (筐总数 - 1)</code
+                >
+              </li>
+              <li>4. <strong>放入筐中</strong>：将包裹放入对应筐（桶）</li>
+              <li>
+                5.
+                <strong>筐满扩容</strong>：当筐太多包裹时，增加筐数量并重新分拣
+              </li>
+            </ul>
+          </div>
         </div>
-        
-        <footer>
-            <p>HashMap寻址算法解析 | 快递分拣站实例 | 计算机科学可视化解释</p>
-        </footer>
+      </div>
+
+      <div class="visualization">
+        <h2 class="visual-header">快递分拣过程可视化</h2>
+
+        <div class="warehouse">
+          <div class="shelf">
+            <div class="shelf-label">待分拣包裹</div>
+            <div class="package" id="pkg1">JD-12345</div>
+            <div class="package" id="pkg2">SF-67890</div>
+            <div class="package" id="pkg3">YT-24680</div>
+          </div>
+
+          <div class="shelf">
+            <div class="shelf-label">分拣中心 (8个筐)</div>
+            <div class="bin" id="bin0">
+              <div class="bin-number">0</div>
+              <div class="bin-content"></div>
+            </div>
+            <div class="bin" id="bin1">
+              <div class="bin-number">1</div>
+              <div class="bin-content"></div>
+            </div>
+            <div class="bin" id="bin2">
+              <div class="bin-number">2</div>
+              <div class="bin-content"></div>
+            </div>
+            <div class="bin" id="bin3">
+              <div class="bin-number">3</div>
+              <div class="bin-content"></div>
+            </div>
+            <div class="bin" id="bin4">
+              <div class="bin-number">4</div>
+              <div class="bin-content"></div>
+            </div>
+            <div class="bin" id="bin5">
+              <div class="bin-number">5</div>
+              <div class="bin-content"></div>
+            </div>
+            <div class="bin" id="bin6">
+              <div class="bin-number">6</div>
+              <div class="bin-content"></div>
+            </div>
+            <div class="bin" id="bin7">
+              <div class="bin-number">7</div>
+              <div class="bin-content"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="calculation">
+          // 分拣算法核心代码：<br />
+          int <span class="highlight">hash</span> = key.hashCode() ^
+          (key.hashCode() >>> 16);<br />
+          int <span class="highlight">index</span> = hash & (n - 1); //
+          n是筐的数量（当前为8）
+        </div>
+
+        <div class="interactive-section">
+          <h3>亲自体验分拣过程</h3>
+
+          <div class="input-group">
+            <div class="input-column">
+              <label for="packageId">输入快递单号：</label>
+              <input
+                type="text"
+                id="packageId"
+                value="JD-12345"
+                placeholder="例如：JD-12345"
+              />
+            </div>
+
+            <div class="input-column">
+              <label for="binCount">选择分拣筐数量：</label>
+              <select id="binCount">
+                <option value="8">8个筐</option>
+                <option value="16">16个筐</option>
+                <option value="32">32个筐</option>
+              </select>
+            </div>
+          </div>
+
+          <button id="sortBtn">开始分拣</button>
+
+          <div class="results">
+            <div class="result-item">
+              <strong>快递单号：</strong> <span id="packageResult"></span>
+            </div>
+            <div class="result-item">
+              <strong>原始哈希值：</strong> <span id="hashOriginal"></span>
+            </div>
+            <div class="result-item">
+              <strong>扰动后哈希值：</strong> <span id="hashDisturbed"></span>
+            </div>
+            <div class="result-item">
+              <strong>分拣筐号：</strong> <span id="binResult"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conclusion">
+        <h3>HashMap寻址核心原理</h3>
+        <ul>
+          <li>
+            <strong>闪电定位</strong>：使用位运算 <code>&</code> 替代取模运算
+            <code>%</code>，速度提升10倍以上
+          </li>
+          <li>
+            <strong>避免扎堆</strong>：哈希扰动函数让相似键值分散到不同位置
+          </li>
+          <li>
+            <strong>动态扩容</strong>：当元素过多时自动增加"筐"的数量（桶扩容）
+          </li>
+          <li><strong>高效查找</strong>：直接计算位置，无需遍历整个仓库</li>
+          <li>
+            <strong>2的n次方</strong>：筐数量总是2的幂次（8,16,32...），确保
+            <code>& (n-1)</code> 等效取模
+          </li>
+        </ul>
+        <p>
+          HashMap就像智能快递分拣系统，无论来多少包裹，都能瞬间算出正确位置，比人工分拣快N倍！
+        </p>
+      </div>
+
+      <footer>
+        <p>HashMap寻址算法解析 | 快递分拣站实例 | 计算机科学可视化解释</p>
+      </footer>
     </div>
-    
+
     <script>
-        // 包裹点击事件
-        document.querySelectorAll('.package').forEach(pkg => {
-            pkg.addEventListener('click', function() {
-                sortPackage(this.id, this.textContent);
-            });
-        });
-        
-        // 分拣按钮事件
-        document.getElementById('sortBtn').addEventListener('click', function() {
-            const packageId = document.getElementById('packageId').value;
-            sortPackage('customPkg', packageId);
-        });
-        
-        // 分拣包裹函数
-        function sortPackage(elementId, packageId) {
-            // 重置所有筐的激活状态
-            document.querySelectorAll('.bin').forEach(bin => {
-                bin.classList.remove('active');
-                bin.querySelector('.bin-content').textContent = '';
-            });
-            
-            // 计算哈希值
-            const hashCode = stringHash(packageId);
-            const disturbedHash = hashCode ^ (hashCode >>> 16);
-            
-            // 获取筐数量
-            const binCount = parseInt(document.getElementById('binCount').value);
-            const binIndex = disturbedHash & (binCount - 1);
-            
-            // 更新结果
-            document.getElementById('packageResult').textContent = packageId;
-            document.getElementById('hashOriginal').textContent = hashCode;
-            document.getElementById('hashDist hashCode;
-            document.getElementById('hashDisturbed').textContent = disturbedHash;
-            document.getElementById('binResult').textContent = binIndex;
-            
-            // 高亮目标筐
-            const targetBin = document.getElementById(`bin${binIndex}`);
-            targetBin.classList.add('active');
-            targetBin.querySelector('.bin-content').textContent = packageId;
-            
-            // 如果是点击包裹，添加动画效果
-            if (elementId !== 'customPkg') {
-                const packageEl = document.getElementById(elementId);
-                packageEl.style.transform = 'scale(0.9)';
-                setTimeout(() => {
-                    packageEl.style.transform = 'scale(1)';
-                }, 300);
-            }
+      // 包裹点击事件
+      document.querySelectorAll('.package').forEach((pkg) => {
+        pkg.addEventListener('click', function () {
+          sortPackage(this.id, this.textContent)
+        })
+      })
+
+      // 分拣按钮事件
+      document.getElementById('sortBtn').addEventListener('click', function () {
+        const packageId = document.getElementById('packageId').value
+        sortPackage('customPkg', packageId)
+      })
+
+      // 分拣包裹函数
+      function sortPackage(elementId, packageId) {
+        // 重置所有筐的激活状态
+        document.querySelectorAll('.bin').forEach((bin) => {
+          bin.classList.remove('active')
+          bin.querySelector('.bin-content').textContent = ''
+        })
+
+        // 计算哈希值
+        const hashCode = stringHash(packageId)
+        const disturbedHash = hashCode ^ (hashCode >>> 16)
+
+        // 获取筐数量
+        const binCount = parseInt(document.getElementById('binCount').value)
+        const binIndex = disturbedHash & (binCount - 1)
+
+        // 更新结果
+        document.getElementById('packageResult').textContent = packageId
+        document.getElementById('hashOriginal').textContent = hashCode
+        document.getElementById('hashDisturbed').textContent = disturbedHash
+        document.getElementById('binResult').textContent = binIndex
+
+        // 高亮目标筐
+        const targetBin = document.getElementById(`bin${binIndex}`)
+        targetBin.classList.add('active')
+        targetBin.querySelector('.bin-content').textContent = packageId
+
+        // 如果是点击包裹，添加动画效果
+        if (elementId !== 'customPkg') {
+          const packageEl = document.getElementById(elementId)
+          packageEl.style.transform = 'scale(0.9)'
+          setTimeout(() => {
+            packageEl.style.transform = 'scale(1)'
+          }, 300)
         }
-        
-        // 简单字符串哈希函数
-        function stringHash(str) {
-            let hash = 0;
-            for ( hash = 0;
-            for (let i = 0; i <let i = 0; i < str.length; i++) {
-                hash = (hash << 5) - hash + str.charCodeAt(i);
-                hash |= 0; // 转换为32位整数
-            }
-            return Math.abs(hash);
+      }
+
+      // 简单字符串哈希函数
+      function stringHash(str) {
+        let hash = 0
+        for (let i = 0; i < str.length; i++) {
+          hash = (hash << 5) - hash + str.charCodeAt(i)
+          hash |= 0 // 转换为32位整数
         }
-        
-        // 初始化：分拣第一个包裹
-        setTimeout(() => {
-            sortPackage('pkg1', 'JD-12345');
-        }, 1000);
+        return Math.abs(hash)
+      }
+
+      // 初始化：分拣第一个包裹
+      setTimeout(() => {
+        sortPackage('pkg1', 'JD-12345')
+      }, 1000)
     </script>
-</body>
+  </body>
 </html>
